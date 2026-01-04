@@ -1,7 +1,7 @@
 'use client'; // 👈 必须保留，因为有动画
 
 import Image from 'next/image';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, Variants } from 'framer-motion';
 import { Terminal, Github, Search, Code2, Coffee, ArrowRight, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,7 +20,7 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
     const y1 = useTransform(scrollY, [0, 300], [0, 50]);
     const y2 = useTransform(scrollY, [0, 300], [0, -50]);
 
-    const containerVariants = {
+    const containerVariants: Variants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
@@ -28,7 +28,7 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
         },
     };
 
-    const itemVariants = {
+    const itemVariants: Variants = {
         hidden: { y: 20, opacity: 0 },
         visible: {
             y: 0,
