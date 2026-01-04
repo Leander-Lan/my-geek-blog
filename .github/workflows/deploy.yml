@@ -1,12 +1,25 @@
-- name: Remote SSH
-    uses: appleboy/ssh-action@master
-    with:
-      host: "115.175.37.0" # 👈 直接写死 IP 字符串，看它还报不报 missing host
-      username: "root"      # 👈 直接写死用户名
-      key: ${{ secrets.SERVER_SSH_KEY }}
-      port: 22
-      script: |
-        cd /root/www/my-geek-blog
-        git pull origin master
-        npm run build
-        pm2 restart my-blog
+name: Deploy Blog
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remote SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: "115.175.37.0"
+          username: "root"
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            cd /root/www/my-geek-blog
+            git remote set-url origin https://ghp.ci/https://github.com/Leander-Lan/my-geek-blog.git
+            git pull origin master
+            npm install --legacy-peer-deps
+            npx prisma generate
+            npm run build
+            pm2 restart my-blog || pm2 start npm --name "my-blog" -- start
