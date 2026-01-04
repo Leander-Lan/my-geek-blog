@@ -1,17 +1,20 @@
-name: blog
+name: Deploy Blog
 
 on:
   push:
-    branches: [ master ] # 如果你的分支叫 main，请改成 main
+    branches: [ master ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Server
+      - name: Debug Variables # 这一步用来测试变量是否存在
+        run: |
+          if [ -z "${{ secrets.SERVER_HOST }}" ]; then echo "HOST IS MISSING"; else echo "HOST IS PRESENT"; fi
+
+      - name: Remote SSH
         uses: appleboy/ssh-action@master
         with:
-          # 注意：这里的名字必须和 GitHub Settings 里的 Secret 名字严格对应
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
