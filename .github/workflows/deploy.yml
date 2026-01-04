@@ -1,0 +1,23 @@
+name: blog
+
+on:
+  push:
+    branches: [ master ] # 当你向 master 分支推送代码时触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd /var/www/my-geek-blog
+            git pull origin master
+            npm install --legacy-peer-deps
+            npx prisma generate
+            npm run build
+            pm2 restart my-blog
