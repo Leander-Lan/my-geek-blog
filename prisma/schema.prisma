@@ -11,9 +11,17 @@ datasource db {
 
 // 你的博客文章模型
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   title     String
   content   String   @db.Text
-  category  String
+  excerpt   String?  // 文章摘要
+  published Boolean  @default(false) // 是否发布
+  category  String   @default("未分类")
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model User {
+  id       String @id @default(cuid())
+  username String @unique
+  password String // 注意：这里存的是加密后的哈希值，不是明文！
 }
