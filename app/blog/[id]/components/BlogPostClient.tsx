@@ -22,21 +22,28 @@ interface PostProps {
 }
 
 export default function BlogPostClient({ post }: PostProps) {
-    const containerVariants = {
+    const containerVariants: Variants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2,
+            },
         },
     };
 
-    const itemVariants = {
+    const itemVariants: Variants = {
         hidden: { y: 30, opacity: 0, filter: 'blur(10px)' },
         visible: {
             y: 0,
             opacity: 1,
             filter: 'blur(0px)',
-            transition: { type: 'spring', stiffness: 50, damping: 20 },
+            transition: {
+                type: 'spring', // 👈 现在有了类型约束，这里就不会报错了
+                stiffness: 50,
+                damping: 20
+            },
         },
     };
 
