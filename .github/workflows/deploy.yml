@@ -2,7 +2,7 @@ name: blog
 
 on:
   push:
-    branches: [ master ] # 当你向 master 分支推送代码时触发
+    branches: [ master ] # 如果你的分支叫 main，请改成 main
 
 jobs:
   deploy:
@@ -11,22 +11,16 @@ jobs:
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
         with:
+          # 注意：这里的名字必须和 GitHub Settings 里的 Secret 名字严格对应
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
           script: |
-            cd /var/www/my-geek-blog
-            # 使用代理前缀强制拉取，防止境内服务器拉取失败
-            git remote set-url origin https://ghp.ci/https://github.com/你的用户名/my-geek-blog.git
+            cd /root/www/my-geek-blog
+            git remote set-url origin https://ghp.ci/https://github.com/Leander-Lan/my-geek-blog.git
             git pull origin master
-            
-            # 设置 npm 镜像加速
-            npm config set registry https://registry.npmmirror.com
             npm install --legacy-peer-deps
-            
-            # 执行构建
             npx prisma generate
             npm run build
-            
-            # 重启服务
             pm2 restart my-blog || pm2 start npm --name "my-blog" -- start
