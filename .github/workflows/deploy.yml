@@ -16,10 +16,20 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           script: |
+            # 1. 进入目录
             cd /root/www/my-geek-blog
-            git remote set-url origin https://ghp.ci/https://github.com/Leander-Lan/my-geek-blog.git
-            git pull origin master
+            
+            # 2. 强力拉取代码（忽略 ghp.ci 域名解析失败，尝试直接拉取）
+            git pull origin master || git pull https://ghp.ci/https://github.com/Leander-Lan/my-geek-blog.git master
+            
+            # 3. 环境配置
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
+            # 4. 执行构建
             npm install --legacy-peer-deps
             npx prisma generate
             npm run build
+            
+            # 5. 使用绝对路径或加载后的环境运行 pm2
             pm2 restart my-blog || pm2 start npm --name "my-blog" -- start

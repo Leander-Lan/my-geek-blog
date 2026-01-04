@@ -33,7 +33,10 @@ export default function HomeClient({ posts }: { posts: Post[] }) {
         visible: {
             y: 0,
             opacity: 1,
-            transition: { type: 'spring', stiffness: 100 },
+            transition: {
+                type: 'spring' as const, // 👈 加上 as const 强制锁定类型
+                stiffness: 100
+            },
         },
     };
 
