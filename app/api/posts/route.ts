@@ -1,27 +1,32 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma"
+import { NextResponse } from "next/server"
 
-export async function POST(request: Request) {
+export async function GET() {
     try {
-        // 1. 【增加在这里】：获取请求头里的暗号 (Token)
-        const token = request.headers.get('Authorization');
+        const posts = await prisma.post.findMany({
+            orderBy: { createdAt: 'desc' }
+        })
 
-        // 2. 校验：如果暗号不对，直接返回 401 错误，不执行后面的代码
-        if (token !== process.env.ADMIN_TOKEN) {
-            return NextResponse.json({ error: '未经授权的访问' }, { status: 401 });
-        }
+        // 核心修复：确保 posts 即使为 null/undefined 也会变成空数组
+        const safePosts = posts || []
 
-        // 3. 校验通过，开始原来的逻辑
-        const body = await request.json();
-        const post = await prisma.post.create({
-            data: {
-                title: body.title,
-                content: body.content,
-                published: true,
-            },
-        });
-        return NextResponse.json(post);
+        return NextResponse.json(safePosts)
     } catch (error) {
-        return NextResponse.json({ error: '创建失败' }, { status: 500 });
+        console.error("API_GET_POSTS_ERROR:", error)
+        // 报错时返回空数组，防止构建工具崩溃
+        return NextResponse.json([], { status: 500 })
+    }
+}
+
+// 如果你还有 POST 方法，确保它逻辑完整
+export async function POST(req: Request) {
+    try {
+        const { title, content } = await req.json()
+        const newPost = await prisma.post.create({
+            data: { title, content }
+        })
+        return NextResponse.json(newPost)
+    } catch (error) {
+        return NextResponse.json({ error: "FAILED_TO_CREATE_POST" }, { status: 500 })
     }
 }

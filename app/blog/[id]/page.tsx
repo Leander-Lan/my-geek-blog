@@ -11,7 +11,8 @@ export default async function BlogPostPage({ params }: PageProps) {
 
     const post = await prisma.post.findUnique({
         where: {
-            id: parseInt(id),
+            // 直接使用 id，不需要 Number() 转换
+            id: id,
         },
     });
 

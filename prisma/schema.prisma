@@ -18,10 +18,12 @@ model Post {
   published Boolean  @default(false) // 是否发布
   category  String   @default("未分类")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt @default(now())
 }
 model User {
-  id       String @id @default(cuid())
-  username String @unique
-  password String // 注意：这里存的是加密后的哈希值，不是明文！
-}
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   // 存储加密后的哈希值
+  name      String?  // 👈 必须补上这一行
+  createdAt DateTime @default(now())
+} // 👈 确保大括号闭合
