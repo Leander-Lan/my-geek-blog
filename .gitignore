@@ -40,4 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+node_modules/
+.next/
+.env.local
+.DS_Store
+.idea/
+.vscode/
+
 /app/generated/prisma

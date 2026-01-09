@@ -1,29 +1,70 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mysql" // ⚠️ 确认你的 .env 里 DATABASE_URL 是 mysql 链接
   url      = env("DATABASE_URL")
 }
 
-// 你的博客文章模型
+// 博客文章模型
 model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String   @db.Text
-  excerpt   String?  // 文章摘要
-  published Boolean  @default(false) // 是否发布
-  category  String   @default("未分类")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  id         String   @id @default(cuid())
+  title      String
+  content    String   @db.Text
+  excerpt    String?  // 文章摘要
+  published  Boolean  @default(false)
+  category   String   @default("未分类")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @default(now())
+  coverImage String?  // 封面图片 URL
+  tags       String?  // 标签
+
+  // 关联评论 (一对多)
+  comments   Comment[]
+
+  // ⚠️ 注意：你原本的代码里可能有 author 关联，这里删掉了。
+  // 如果你的代码里有 post.author.name 这样的调用，会报错。
+  // 如果不需要作者字段，可以保持这样。
 }
+
+// 评论模型
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  email     String
+  nickname  String?  @default("Anonymous Geek")
+
+  // 系统信息
+  avatarUrl String?
+  os        String?
+  browser   String?
+  ip        String?
+
+  createdAt DateTime @default(now())
+
+  // 关联到文章
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// 用户模型 (仅用于密码登录)
 model User {
   id        String   @id @default(cuid())
   username  String   @unique
-  password  String   // 存储加密后的哈希值
-  name      String?  // 👈 必须补上这一行
+  password  String
+  name      String?
   createdAt DateTime @default(now())
-} // 👈 确保大括号闭合
+}
+
+// 友链模型
+model Link {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  avatar      String
+  description String
+  email       String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+}

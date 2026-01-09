@@ -1,36 +1,28 @@
-// app/page.tsx
+import { prisma } from "@/lib/prisma";
+import HomeClient from "@/components/HomeClient"; // 👈 建议用 @/components 确保路径正确
 
-// 【关键添加】：强制每次请求都重新从数据库读取，不使用缓存
+// 强制动态渲染，保证每次刷新都能看到最新文章
 export const dynamic = "force-dynamic";
 
-import { prisma } from '@/lib/prisma';
-import HomeClient from './components/HomeClient';
+export default async function HomePage() {
+    // 1. 从数据库查最新的 4 篇【已发布】文章
+    const posts = await prisma.post.findMany({
+        where: {
+            published: true // 👈 关键修改：只显示已发布的，草稿不会出现在首页
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 4,
+    });
 
-export default async function Home() {
-    try {
-        // 1. 从数据库读取文章
-        const data = await prisma.post.findMany({
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
+    // 2. 格式化数据 (Next.js 客户端组件不支持直接传 Date 对象，需要转成字符串)
+    const serializedPosts = posts.map((post) => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        category: post.category || "Tech",
+        createdAt: post.createdAt.toISOString(), // 把 Date 转为 String
+    }));
 
-        // 2. 核心修复：如果 data 是 undefined 或 null，则赋值为空数组 []
-        const safeData = data || [];
-
-        // 3. 格式化数据，同时对时间字段做安全处理
-        const posts = safeData.map((post) => ({
-            ...post,
-            createdAt: post.createdAt
-                ? new Date(post.createdAt).toLocaleDateString('zh-CN')
-                : "2026-01-01",
-        }));
-
-        // 4. 将安全的数据传给 UI 组件
-        return <HomeClient posts={posts} />;
-    } catch (error) {
-        console.error("BUILD_DATA_COLLECTION_ERROR:", error);
-        // 如果数据库连接彻底失败，返回空数组以保证构建通过
-        return <HomeClient posts={[]} />;
-    }
+    // 3. 传给客户端组件
+    return <HomeClient initialPosts={serializedPosts} />;
 }

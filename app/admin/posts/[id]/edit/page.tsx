@@ -1,54 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, use } from "react"; // 👈 引入 use 用于解包 params
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send, Image as ImageIcon, Tag, Layout, Type, Globe, Lock } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, Tag, Layout, Type, Globe, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import GeekEditor from "../../components/GeekEditor";
+// 👇 引入编辑器组件 (保持你原本的相对路径)
+import GeekEditor from "../../../components/GeekEditor";
 
-export default function NewPostPage() {
+export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
+    // Next.js 15 推荐用法：使用 use() 解包 params
+    const { id } = use(params);
     const router = useRouter();
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
     // 表单状态
     const [formData, setFormData] = useState({
         title: "",
         content: "",
-        category: "Tech",
+        category: "",
         coverImage: "",
         tags: "",
-        published: false // 👈 新增：默认为草稿
+        published: false // 👈 1. 新增：默认为草稿 (false)
     });
 
-    // 发布逻辑
-    const handlePublish = async () => {
-        if (!formData.title || !formData.content) {
-            alert("请至少填写标题和内容");
-            return;
-        }
+    // 1. 页面加载时：获取文章原内容
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch(`/api/posts/${id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setFormData({
+                        title: data.title || "",
+                        content: data.content || "",
+                        category: data.category || "Tech",
+                        coverImage: data.coverImage || "",
+                        tags: data.tags || "",
+                        published: data.published || false // 👈 2. 获取并回显当前状态
+                    });
+                } else {
+                    alert("加载文章失败");
+                }
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [id]);
 
+    // 2. 保存修改
+    const handleSave = async () => {
         setSaving(true);
 
         try {
-            const res = await fetch("/api/posts", {
-                method: "POST",
+            const res = await fetch(`/api/posts/${id}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
             });
 
             if (res.ok) {
-                router.push("/admin/posts");
+                // 保存成功后提示一下
+                alert(`系统提示: ${formData.published ? "文章已更新并发布" : "文章已更新为草稿"}`);
+                router.push("/admin/posts"); // 返回列表
                 router.refresh();
             } else {
-                alert("发布失败，请检查网络");
+                alert("系统警告: 写入失败");
             }
         } catch (e) {
-            alert("网络连接异常");
+            alert("网络链路异常");
         } finally {
             setSaving(false);
         }
     };
+
+    if (loading) return <div className="p-8 text-green-500 font-mono animate-pulse">LOADING_DATA_BUFFER...</div>;
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto pb-20">
@@ -61,18 +91,20 @@ export default function NewPostPage() {
                         </Button>
                     </Link>
                     <h1 className="text-xl font-mono font-bold text-white">
-                        NEW_ENTRY <span className="text-blue-500 text-sm">:: CREATE_MODE</span>
+                        EDIT_MODE <span className="text-green-500 text-sm">:: {formData.title}</span>
                     </h1>
                 </div>
+
+                {/* 👇 3. 按钮状态根据 published 变化 */}
                 <Button
-                    onClick={handlePublish}
+                    onClick={handleSave}
                     disabled={saving}
                     className={`font-mono text-white ${formData.published ? 'bg-green-600 hover:bg-green-500' : 'bg-yellow-600 hover:bg-yellow-500'}`}
                 >
-                    {saving ? "UPLOADING..." : (
+                    {saving ? "WRITING..." : (
                         <>
                             {formData.published ? <Globe className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
-                            {formData.published ? "PUBLISH NOW" : "SAVE AS DRAFT"}
+                            {formData.published ? "UPDATE (PUBLISHED)" : "UPDATE (DRAFT)"}
                         </>
                     )}
                 </Button>
@@ -91,12 +123,10 @@ export default function NewPostPage() {
                             type="text"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-3 text-white focus:border-blue-500 focus:outline-none transition-colors font-bold text-lg placeholder:text-slate-700"
-                            placeholder="输入文章标题..."
+                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-3 text-white focus:border-green-500 focus:outline-none transition-colors font-bold text-lg"
                         />
                     </div>
 
-                    {/* 分类选择 */}
                     <div className="space-y-2">
                         <label className="text-xs font-mono text-slate-500 flex items-center gap-2">
                             <Layout size={14} /> CATEGORY
@@ -104,7 +134,7 @@ export default function NewPostPage() {
                         <select
                             value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-3 text-slate-300 focus:border-blue-500 focus:outline-none h-[52px]"
+                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-3 text-slate-300 focus:border-green-500 focus:outline-none h-[52px]"
                         >
                             <option value="Tech">Tech</option>
                             <option value="Life">Life</option>
@@ -113,7 +143,7 @@ export default function NewPostPage() {
                         </select>
                     </div>
 
-                    {/* 👇 新增：状态选择 (草稿/发布) */}
+                    {/* 👇 4. 新增：状态选择器 */}
                     <div className="space-y-2">
                         <label className="text-xs font-mono text-slate-500 flex items-center gap-2">
                             {formData.published ? <Globe size={14} className="text-green-500"/> : <Lock size={14} className="text-yellow-500"/>}
@@ -140,8 +170,7 @@ export default function NewPostPage() {
                             type="text"
                             value={formData.coverImage}
                             onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-2 text-slate-300 text-sm focus:border-blue-500 focus:outline-none font-mono placeholder:text-slate-700"
-                            placeholder="https://example.com/image.png"
+                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-2 text-slate-300 text-sm focus:border-green-500 focus:outline-none font-mono"
                         />
                     </div>
                     <div className="space-y-2">
@@ -152,8 +181,7 @@ export default function NewPostPage() {
                             type="text"
                             value={formData.tags}
                             onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-2 text-slate-300 text-sm focus:border-blue-500 focus:outline-none font-mono placeholder:text-slate-700"
-                            placeholder="React, Next.js, Prisma"
+                            className="w-full bg-slate-900/50 border border-slate-800 rounded p-2 text-slate-300 text-sm focus:border-green-500 focus:outline-none font-mono"
                         />
                     </div>
                 </div>
